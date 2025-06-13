@@ -46,20 +46,20 @@
     device-orientation-permission-ui="enabled: false">
 
     <a-assets>
-      <video id="myVideo" src="Pungai Tree Video 1.mp4" playsinline loop></video>
+      <video id="myVideo" src="Pungai Tree Video 1.mp4" playsinline webkit-playsinline crossorigin="anonymous"></video>
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- Image Target -->
+    <!-- AR Target -->
     <a-entity id="target1" mindar-image-target="targetIndex: 0">
-      <a-plane id="videoDisplay" position="0 0 0" height="1.2" width="2" material="src: #myVideo"></a-plane>
+      <a-entity id="videoPlane" geometry="primitive: plane; height: 1.2; width: 2"
+                material="shader: flat; src: #myVideo" position="0 0 0">
+      </a-entity>
     </a-entity>
 
-    <!-- Sticky video wrapper -->
-    <a-entity id="videoWrapper" position="0 0 -3" visible="false">
-      <a-plane id="fixedVideoDisplay" height="1.2" width="2" material="src: #myVideo"></a-plane>
-    </a-entity>
+    <!-- Sticky parent (hidden initially) -->
+    <a-entity id="fixedParent" position="0 0 -3" visible="false"></a-entity>
   </a-scene>
 
   <script>
@@ -67,48 +67,52 @@
     const playPauseButton = document.querySelector('#playPauseButton');
     const playPauseContainer = document.querySelector('#playPauseContainer');
     const target1 = document.querySelector('#target1');
-    const videoDisplay = document.querySelector('#videoDisplay');
-    const videoWrapper = document.querySelector('#videoWrapper');
-    const fixedVideoDisplay = document.querySelector('#fixedVideoDisplay');
+    const videoPlane = document.querySelector('#videoPlane');
+    const fixedParent = document.querySelector('#fixedParent');
 
     let isPlaying = false;
     let targetVisible = false;
-    let isVideoMoved = false;
+    let isStuck = false;
 
+    // Button click: Play or Pause
     playPauseButton.addEventListener('click', () => {
-      if (targetVisible) {
-        if (!isVideoMoved) {
-          videoWrapper.setAttribute('visible', 'true');
-          videoDisplay.setAttribute('visible', 'false');
-          isVideoMoved = true;
-        }
+      if (!targetVisible) return;
 
-        if (isPlaying) {
-          video.pause();
-          playPauseButton.textContent = 'Play with Audio';
-        } else {
-          video.play();
-          playPauseButton.textContent = 'Pause';
-        }
-        isPlaying = !isPlaying;
+      if (!isStuck) {
+        // Move the video plane out of marker and into fixed space
+        fixedParent.appendChild(videoPlane);
+        fixedParent.setAttribute('visible', 'true');
+        isStuck = true;
+      }
+
+      if (video.paused) {
+        video.play();
+        playPauseButton.textContent = 'Pause';
+        isPlaying = true;
+      } else {
+        video.pause();
+        playPauseButton.textContent = 'Play with Audio';
+        isPlaying = false;
       }
     });
 
+    // On target found
     target1.addEventListener('targetFound', () => {
-      if (!isVideoMoved) {
+      if (!isStuck) {
         targetVisible = true;
         playPauseContainer.style.display = 'block';
         playPauseButton.textContent = 'Play with Audio';
       }
     });
 
+    // On target lost
     target1.addEventListener('targetLost', () => {
       targetVisible = false;
-      if (!isVideoMoved) {
+      if (!isStuck) {
         video.pause();
+        playPauseButton.textContent = 'Play with Audio';
         isPlaying = false;
         playPauseContainer.style.display = 'none';
-        playPauseButton.textContent = 'Play with Audio';
       }
     });
   </script>
