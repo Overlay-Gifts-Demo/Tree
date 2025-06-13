@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #playPauseButtonContainer {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999;
+      display: none;
+    }
+
+    #playPauseButton {
+      padding: 10px 20px;
+      background-color: #FFD700;
+      color: #000;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .a-enter-vr-button {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Play Button -->
+  <div id="playPauseButtonContainer">
+    <button id="playPauseButton">Play with Audio</button>
+  </div>
+
+  <!-- AR Scene -->
+  <a-scene
+    mindar-image="imageTargetSrc: ./targets.mind"
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <a-assets>
+      <!-- Only One Video -->
+      <video id="mainVideo" src="Pungai Tree Video.mp4" preload="auto" playsinline crossorigin="anonymous"></video>
+      <img id="logoImage" src="4k.png" />
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity id="target1" mindar-image-target="targetIndex: 0">
+      <!-- Logo -->
+      <a-image src="#logoImage" position="0 .45 0" width="0.9" height="0.35"></a-image>
+
+      <!-- Video Screen -->
+      <a-plane id="videoDisplay" material="shader: flat; src: #mainVideo" position="0 0 0" height="0.59" width="1"></a-plane>
+    </a-entity>
+  </a-scene>
+
+  <script>
+    const mainVideo = document.querySelector('#mainVideo');
+    const playButton = document.querySelector('#playPauseButton');
+    const playContainer = document.querySelector('#playPauseButtonContainer');
+    let targetVisible = false;
+
+    const target = document.querySelector('#target1');
+
+    target.addEventListener('targetFound', () => {
+      targetVisible = true;
+      playContainer.style.display = 'block';
+      playButton.textContent = "Play with Audio";
+    });
+
+    target.addEventListener('targetLost', () => {
+      targetVisible = false;
+      mainVideo.pause();
+      playContainer.style.display = 'none';
+      playButton.textContent = "Play with Audio";
+    });
+
+    playButton.addEventListener('click', () => {
+      if (targetVisible) {
+        if (mainVideo.paused) {
+          mainVideo.play();
+          playButton.textContent = "Pause";
+        } else {
+          mainVideo.pause();
+          playButton.textContent = "Play with Audio";
+        }
+      }
+    });
+  </script>
+</body>
+</html>
