@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,28 +46,36 @@
     color-space="sRGB"
     renderer="colorManagement: true, physicallyCorrectLights"
     vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
+    device-orientation-permission-ui="enabled: false"
+    embedded>
 
     <a-assets>
-      <video id="myVideo" src="pungai-tree-video-1.mp4" playsinline crossorigin="anonymous" loop></video>
+      <video
+        id="myVideo"
+        src="pungai-tree-video-1.mp4"
+        preload="auto"
+        crossorigin="anonymous"
+        loop
+        playsinline
+        webkit-playsinline
+        muted
+      ></video>
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- AR Target -->
-    <a-entity id="target1" mindar-image-target="targetIndex: 0">
-      <!-- Optional: Hidden target plane (no need for video here now) -->
-    </a-entity>
-
-    <!-- Sticky video plane (always visible after detection) -->
-    <a-plane 
-      id="stickyPlane" 
-      position="0 0 -2" 
-      width="2" 
-      height="1.2" 
-      material="shader: flat; src: #myVideo" 
+    <!-- Sticky video plane always in front -->
+    <a-plane
+      id="stickyPlane"
+      position="0 0 -2"
+      width="2"
+      height="1.2"
+      material="shader: flat; src: #myVideo"
       visible="false">
     </a-plane>
+
+    <!-- MindAR target (no video inside it) -->
+    <a-entity id="target1" mindar-image-target="targetIndex: 0"></a-entity>
   </a-scene>
 
   <script>
@@ -77,38 +86,36 @@
     const stickyPlane = document.querySelector('#stickyPlane');
 
     let isPlaying = false;
-    let targetVisible = false;
     let hasActivated = false;
 
     playPauseButton.addEventListener('click', () => {
-      if (targetVisible || hasActivated) {
+      if (hasActivated) {
         if (isPlaying) {
           video.pause();
           playPauseButton.textContent = 'Play with Audio';
         } else {
+          video.muted = false;
           video.play();
-          stickyPlane.setAttribute('visible', true);
           playPauseButton.textContent = 'Pause';
-          hasActivated = true; // Keeps video showing even after target lost
         }
         isPlaying = !isPlaying;
       }
     });
 
     target1.addEventListener('targetFound', () => {
-      targetVisible = true;
-      playPauseContainer.style.display = 'block';
-      playPauseButton.textContent = isPlaying ? 'Pause' : 'Play with Audio';
+      if (!hasActivated) {
+        stickyPlane.setAttribute('visible', true);
+        video.play();
+        video.muted = false;
+        playPauseContainer.style.display = 'block';
+        playPauseButton.textContent = 'Pause';
+        hasActivated = true;
+        isPlaying = true;
+      }
     });
 
     target1.addEventListener('targetLost', () => {
-      targetVisible = false;
-      if (!hasActivated) {
-        video.pause();
-        stickyPlane.setAttribute('visible', false);
-        isPlaying = false;
-      }
-      playPauseContainer.style.display = hasActivated ? 'block' : 'none';
+      // Do not hide video or stop on target lost
     });
   </script>
 </body>
