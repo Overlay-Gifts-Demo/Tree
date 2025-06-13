@@ -1,120 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
 
-    #playPauseContainer {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      z-index: 999;
-      display: none;
-    }
+      #playPauseContainer {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        z-index: 999;
+        display: none;
+      }
 
-    #playPauseButton {
-      padding: 10px 20px;
-      background-color: #FFD700;
-      border: none;
-      border-radius: 5px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+      #playPauseButton {
+        padding: 10px 20px;
+        background-color: #FFD700;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+      }
 
-    .a-enter-vr-button {
-      display: none !important;
-    }
-  </style>
-</head>
-<body>
-  <div id="playPauseContainer">
-    <button id="playPauseButton">Play with Audio</button>
-  </div>
+      .a-enter-vr-button {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="playPauseContainer">
+      <button id="playPauseButton">Play with Audio</button>
+    </div>
 
-  <a-scene
-    mindar-image="imageTargetSrc: ./targets.mind"
-    color-space="sRGB"
-    renderer="colorManagement: true, physicallyCorrectLights"
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
+    <a-scene
+      mindar-image="imageTargetSrc: ./targets.mind"
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+    >
+      <a-assets>
+        <video
+          id="myVideo"
+          src="Pungai Tree Video 1.mp4"
+          playsinline
+          crossorigin="anonymous"
+        ></video>
+      </a-assets>
 
-    <a-assets>
-      <video id="myVideo" src="Pungai Tree Video 1.mp4" playsinline webkit-playsinline crossorigin="anonymous"></video>
-    </a-assets>
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-    <!-- AR Target -->
-    <a-entity id="target1" mindar-image-target="targetIndex: 0">
-      <a-entity id="videoPlane" geometry="primitive: plane; height: 1.2; width: 2"
-                material="shader: flat; src: #myVideo" position="0 0 0">
+      <!-- AR marker video -->
+      <a-entity id="target1" mindar-image-target="targetIndex: 0">
+        <a-plane
+          id="markerVideoPlane"
+          position="0 0 0"
+          width="1.5"
+          height="0.85"
+          material="shader: flat; src: #myVideo"
+        ></a-plane>
       </a-entity>
-    </a-entity>
 
-    <!-- Sticky parent (hidden initially) -->
-    <a-entity id="fixedParent" position="0 0 -3" visible="false"></a-entity>
-  </a-scene>
+      <!-- Sticky screen video (initially hidden) -->
+      <a-entity
+        id="stickyVideoPlane"
+        position="0 0 -2.5"
+        visible="false"
+        material="shader: flat; src: #myVideo"
+        geometry="primitive: plane; height: 1.2; width: 2"
+      ></a-entity>
+    </a-scene>
 
-  <script>
-    const video = document.querySelector('#myVideo');
-    const playPauseButton = document.querySelector('#playPauseButton');
-    const playPauseContainer = document.querySelector('#playPauseContainer');
-    const target1 = document.querySelector('#target1');
-    const videoPlane = document.querySelector('#videoPlane');
-    const fixedParent = document.querySelector('#fixedParent');
+    <script>
+      const video = document.querySelector('#myVideo');
+      const playPauseButton = document.querySelector('#playPauseButton');
+      const playPauseContainer = document.querySelector('#playPauseContainer');
+      const markerVideoPlane = document.querySelector('#markerVideoPlane');
+      const stickyVideoPlane = document.querySelector('#stickyVideoPlane');
+      const target1 = document.querySelector('#target1');
 
-    let isPlaying = false;
-    let targetVisible = false;
-    let isStuck = false;
+      let targetVisible = false;
+      let isPlaying = false;
+      let isStuck = false;
 
-    // Button click: Play or Pause
-    playPauseButton.addEventListener('click', () => {
-      if (!targetVisible) return;
+      // Show button on marker detection
+      target1.addEventListener('targetFound', () => {
+        if (!isStuck) {
+          targetVisible = true;
+          playPauseContainer.style.display = 'block';
+          playPauseButton.textContent = 'Play with Audio';
+        }
+      });
 
-      if (!isStuck) {
-        // Move the video plane out of marker and into fixed space
-        fixedParent.appendChild(videoPlane);
-        fixedParent.setAttribute('visible', 'true');
-        isStuck = true;
-      }
+      // Hide button and pause if marker lost before sticking
+      target1.addEventListener('targetLost', () => {
+        if (!isStuck) {
+          targetVisible = false;
+          video.pause();
+          isPlaying = false;
+          playPauseContainer.style.display = 'none';
+          playPauseButton.textContent = 'Play with Audio';
+        }
+      });
 
-      if (video.paused) {
-        video.play();
-        playPauseButton.textContent = 'Pause';
-        isPlaying = true;
-      } else {
-        video.pause();
-        playPauseButton.textContent = 'Play with Audio';
-        isPlaying = false;
-      }
-    });
+      // Play/Pause toggle
+      playPauseButton.addEventListener('click', () => {
+        if (!targetVisible && !isStuck) return;
 
-    // On target found
-    target1.addEventListener('targetFound', () => {
-      if (!isStuck) {
-        targetVisible = true;
-        playPauseContainer.style.display = 'block';
-        playPauseButton.textContent = 'Play with Audio';
-      }
-    });
+        if (!isStuck) {
+          isStuck = true;
 
-    // On target lost
-    target1.addEventListener('targetLost', () => {
-      targetVisible = false;
-      if (!isStuck) {
-        video.pause();
-        playPauseButton.textContent = 'Play with Audio';
-        isPlaying = false;
-        playPauseContainer.style.display = 'none';
-      }
-    });
-  </script>
-</body>
+          // Hide marker video, show sticky video
+          markerVideoPlane.setAttribute('visible', 'false');
+          stickyVideoPlane.setAttribute('visible', 'true');
+        }
+
+        if (video.paused) {
+          video.play();
+          playPauseButton.textContent = 'Pause';
+          isPlaying = true;
+        } else {
+          video.pause();
+          playPauseButton.textContent = 'Play with Audio';
+          isPlaying = false;
+        }
+      });
+    </script>
+  </body>
 </html>
