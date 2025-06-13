@@ -34,12 +34,10 @@
   </style>
 </head>
 <body>
-  <!-- Play/Pause Button -->
   <div id="playPauseContainer">
     <button id="playPauseButton">Play with Audio</button>
   </div>
 
-  <!-- AR Scene -->
   <a-scene
     mindar-image="imageTargetSrc: ./targets.mind"
     color-space="sRGB"
@@ -53,10 +51,15 @@
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- AR Target -->
+    <!-- Image Target -->
     <a-entity id="target1" mindar-image-target="targetIndex: 0">
-  <a-plane id="videoDisplay" position="0 0 0" height="1.2" width="2" material="src: #myVideo"></a-plane>
-</a-entity>
+      <a-plane id="videoDisplay" position="0 0 0" height="1.2" width="2" material="src: #myVideo"></a-plane>
+    </a-entity>
+
+    <!-- Sticky video wrapper -->
+    <a-entity id="videoWrapper" position="0 0 -3" visible="false">
+      <a-plane id="fixedVideoDisplay" height="1.2" width="2" material="src: #myVideo"></a-plane>
+    </a-entity>
   </a-scene>
 
   <script>
@@ -64,11 +67,22 @@
     const playPauseButton = document.querySelector('#playPauseButton');
     const playPauseContainer = document.querySelector('#playPauseContainer');
     const target1 = document.querySelector('#target1');
+    const videoDisplay = document.querySelector('#videoDisplay');
+    const videoWrapper = document.querySelector('#videoWrapper');
+    const fixedVideoDisplay = document.querySelector('#fixedVideoDisplay');
+
     let isPlaying = false;
     let targetVisible = false;
+    let isVideoMoved = false;
 
     playPauseButton.addEventListener('click', () => {
       if (targetVisible) {
+        if (!isVideoMoved) {
+          videoWrapper.setAttribute('visible', 'true');
+          videoDisplay.setAttribute('visible', 'false');
+          isVideoMoved = true;
+        }
+
         if (isPlaying) {
           video.pause();
           playPauseButton.textContent = 'Play with Audio';
@@ -81,17 +95,21 @@
     });
 
     target1.addEventListener('targetFound', () => {
-      targetVisible = true;
-      playPauseContainer.style.display = 'block';
-      playPauseButton.textContent = 'Play with Audio';
+      if (!isVideoMoved) {
+        targetVisible = true;
+        playPauseContainer.style.display = 'block';
+        playPauseButton.textContent = 'Play with Audio';
+      }
     });
 
     target1.addEventListener('targetLost', () => {
       targetVisible = false;
-      video.pause();
-      isPlaying = false;
-      playPauseContainer.style.display = 'none';
-      playPauseButton.textContent = 'Play with Audio';
+      if (!isVideoMoved) {
+        video.pause();
+        isPlaying = false;
+        playPauseContainer.style.display = 'none';
+        playPauseButton.textContent = 'Play with Audio';
+      }
     });
   </script>
 </body>
