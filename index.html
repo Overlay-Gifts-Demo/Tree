@@ -1,21 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MindAR Single Video</title>
-
-  <!-- A-Frame and MindAR -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
   <style>
-    body, html {
+    body {
       margin: 0;
       overflow: hidden;
+      font-family: Arial, sans-serif;
     }
 
-    #playPauseButtonContainer {
+    #playPauseContainer {
       position: absolute;
       bottom: 20px;
       right: 20px;
@@ -25,7 +21,7 @@
 
     #playPauseButton {
       padding: 10px 20px;
-      background: gold;
+      background-color: #FFD700;
       border: none;
       border-radius: 5px;
       font-weight: bold;
@@ -38,80 +34,67 @@
   </style>
 </head>
 <body>
-
-  <!-- Play Button -->
-  <div id="playPauseButtonContainer">
+  <!-- Play/Pause Button -->
+  <div id="playPauseContainer">
     <button id="playPauseButton">Play with Audio</button>
   </div>
 
-  <!-- A-Frame Scene -->
+  <!-- AR Scene -->
   <a-scene
     mindar-image="imageTargetSrc: ./targets.mind"
     color-space="sRGB"
     renderer="colorManagement: true, physicallyCorrectLights"
     vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false"
-    embedded
-  >
+    device-orientation-permission-ui="enabled: false">
+
     <a-assets>
-      <video id="mainVideo" src="gold chain.mp4" preload="auto" playsinline crossorigin="anonymous"></video>
+      <video id="myVideo" src="myvideo.mp4" playsinline loop></video>
       <img id="logoImage" src="4k.png" />
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
+    <!-- AR Target -->
     <a-entity id="target1" mindar-image-target="targetIndex: 0">
-      <a-image src="#logoImage" position="0 .5 0" width="0.7" height="0.3"></a-image>
-      <a-plane id="videoPlane" position="0 0 0" width="1" height="0.6" rotation="0 0 0" visible="false"></a-plane>
+      <a-image src="#logoImage" position="0 0.45 0" width="0.9" height="0.35"></a-image>
+      <a-plane id="videoDisplay" position="0 0 0" height="0.59" width="1" material="src: #myVideo"></a-plane>
     </a-entity>
   </a-scene>
 
   <script>
-    const video = document.querySelector('#mainVideo');
-    const videoPlane = document.querySelector('#videoPlane');
-    const playPauseBtn = document.querySelector('#playPauseButton');
-    const playPauseContainer = document.querySelector('#playPauseButtonContainer');
-
+    const video = document.querySelector('#myVideo');
+    const playPauseButton = document.querySelector('#playPauseButton');
+    const playPauseContainer = document.querySelector('#playPauseContainer');
+    const target1 = document.querySelector('#target1');
     let isPlaying = false;
     let targetVisible = false;
 
-    // Assign video texture to plane
-    videoPlane.setAttribute('material', { src: '#mainVideo', transparent: true });
-
-    // Show play button when target is found
-    const target1 = document.querySelector('#target1');
+    playPauseButton.addEventListener('click', () => {
+      if (targetVisible) {
+        if (isPlaying) {
+          video.pause();
+          playPauseButton.textContent = 'Play with Audio';
+        } else {
+          video.play();
+          playPauseButton.textContent = 'Pause';
+        }
+        isPlaying = !isPlaying;
+      }
+    });
 
     target1.addEventListener('targetFound', () => {
       targetVisible = true;
-      videoPlane.setAttribute('visible', true);
       playPauseContainer.style.display = 'block';
-      playPauseBtn.textContent = "Play with Audio";
+      playPauseButton.textContent = 'Play with Audio';
     });
 
     target1.addEventListener('targetLost', () => {
       targetVisible = false;
       video.pause();
       isPlaying = false;
-      playPauseBtn.textContent = "Play with Audio";
       playPauseContainer.style.display = 'none';
-      videoPlane.setAttribute('visible', false);
-    });
-
-    // Play video only on button click
-    playPauseBtn.addEventListener('click', () => {
-      if (!video) return;
-
-      if (isPlaying) {
-        video.pause();
-        playPauseBtn.textContent = "Play with Audio";
-      } else {
-        video.play();
-        playPauseBtn.textContent = "Pause";
-      }
-
-      isPlaying = !isPlaying;
+      playPauseButton.textContent = 'Play with Audio';
     });
   </script>
-
 </body>
 </html>
