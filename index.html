@@ -56,10 +56,10 @@
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- AR marker video -->
+      <!-- Marker-bound plane -->
       <a-entity id="target1" mindar-image-target="targetIndex: 0">
         <a-plane
-          id="markerVideoPlane"
+          id="markerPlane"
           position="0 0 0"
           width="1.5"
           height="0.85"
@@ -67,67 +67,69 @@
         ></a-plane>
       </a-entity>
 
-      <!-- Sticky screen video (initially hidden) -->
-      <a-entity
-        id="stickyVideoPlane"
-        position="0 0 -2.5"
-        visible="false"
-        material="shader: flat; src: #myVideo"
-        geometry="primitive: plane; height: 1.2; width: 2"
-      ></a-entity>
+      <!-- Sticky plane always in front of camera (initially hidden) -->
+      <a-entity camera>
+        <a-plane
+          id="stickyPlane"
+          position="0 0 -2"
+          width="2"
+          height="1.2"
+          material="shader: flat; src: #myVideo"
+          visible="false"
+        ></a-plane>
+      </a-entity>
     </a-scene>
 
     <script>
-      const video = document.querySelector('#myVideo');
-      const playPauseButton = document.querySelector('#playPauseButton');
-      const playPauseContainer = document.querySelector('#playPauseContainer');
-      const markerVideoPlane = document.querySelector('#markerVideoPlane');
-      const stickyVideoPlane = document.querySelector('#stickyVideoPlane');
-      const target1 = document.querySelector('#target1');
+      const video = document.querySelector("#myVideo");
+      const playPauseButton = document.querySelector("#playPauseButton");
+      const playPauseContainer = document.querySelector("#playPauseContainer");
+      const markerPlane = document.querySelector("#markerPlane");
+      const stickyPlane = document.querySelector("#stickyPlane");
+      const target1 = document.querySelector("#target1");
 
       let targetVisible = false;
       let isPlaying = false;
       let isStuck = false;
 
-      // Show button on marker detection
-      target1.addEventListener('targetFound', () => {
+      // On marker detection
+      target1.addEventListener("targetFound", () => {
         if (!isStuck) {
           targetVisible = true;
-          playPauseContainer.style.display = 'block';
-          playPauseButton.textContent = 'Play with Audio';
+          playPauseContainer.style.display = "block";
+          playPauseButton.textContent = "Play with Audio";
         }
       });
 
-      // Hide button and pause if marker lost before sticking
-      target1.addEventListener('targetLost', () => {
+      // On marker lost
+      target1.addEventListener("targetLost", () => {
         if (!isStuck) {
           targetVisible = false;
+          playPauseContainer.style.display = "none";
           video.pause();
           isPlaying = false;
-          playPauseContainer.style.display = 'none';
-          playPauseButton.textContent = 'Play with Audio';
+          playPauseButton.textContent = "Play with Audio";
         }
       });
 
-      // Play/Pause toggle
-      playPauseButton.addEventListener('click', () => {
+      // Button click logic
+      playPauseButton.addEventListener("click", () => {
         if (!targetVisible && !isStuck) return;
 
+        // Stick video to screen
         if (!isStuck) {
           isStuck = true;
-
-          // Hide marker video, show sticky video
-          markerVideoPlane.setAttribute('visible', 'false');
-          stickyVideoPlane.setAttribute('visible', 'true');
+          markerPlane.setAttribute("visible", "false");
+          stickyPlane.setAttribute("visible", "true");
         }
 
         if (video.paused) {
           video.play();
-          playPauseButton.textContent = 'Pause';
+          playPauseButton.textContent = "Pause";
           isPlaying = true;
         } else {
           video.pause();
-          playPauseButton.textContent = 'Play with Audio';
+          playPauseButton.textContent = "Play with Audio";
           isPlaying = false;
         }
       });
